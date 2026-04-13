@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Journey Mentor — Org Chart</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #1e1e1c;
+    color: #d4d2cc;
+    min-height: 100vh;
+    padding: 36px 20px 60px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page-header { text-align: center; margin-bottom: 36px; }
+  .page-header h1 { font-size: 22px; font-weight: 600; color: #5abf95; letter-spacing: 0.02em; }
+  .page-header p { font-size: 12px; color: #686660; margin-top: 5px; letter-spacing: 0.05em; }
+
+  .org { max-width: 1200px; margin: 0 auto; }
+
+  .cto-wrap { display: flex; flex-direction: column; align-items: center; }
+  .cto-card {
+    background: #1a3028; border: 1.5px solid #3a8060;
+    border-radius: 12px; padding: 15px 40px; text-align: center;
+  }
+  .cto-label { font-size: 10px; letter-spacing: .08em; color: #4a9a78; margin-bottom: 3px; font-weight: 500; text-transform: uppercase; }
+  .cto-name { font-size: 16px; font-weight: 600; color: #a0d8bc; }
+  .cto-role { font-size: 12px; color: #5a9878; margin-top: 3px; }
+
+  .vline { width: 2px; background: #38362e; }
+  .hline { height: 2px; background: #38362e; width: 100%; }
+
+  .dept-row { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; align-items: start; }
+  .dept-col { display: flex; flex-direction: column; align-items: center; }
+  .vl-dept { width: 2px; height: 18px; background: #38362e; }
+
+  .dept-card {
+    width: 100%; border-radius: 10px; border: 1.5px solid;
+    padding: 11px 7px; cursor: pointer; user-select: none;
+    text-align: center; transition: opacity .15s, transform .15s;
+  }
+  .dept-card:hover { opacity: .85; transform: translateY(-1px); }
+
+  .dc-business { background: #22203a; border-color: #5850a0; }
+  .dc-devops   { background: #28220e; border-color: #806018; }
+  .dc-database { background: #281a14; border-color: #904028; }
+  .dc-impl     { background: #162030; border-color: #285888; }
+  .dc-dev      { background: #142418; border-color: #206850; }
+  .dc-mktg     { background: #281424; border-color: #883060; }
+  .dc-data     { background: #1c2610; border-color: #487018; }
+
+  .dn { font-size: 12px; font-weight: 600; }
+  .dn-business { color: #9890d8; } .dn-devops { color: #c09840; } .dn-database { color: #c07058; }
+  .dn-impl { color: #5898c8; } .dn-dev { color: #48a878; } .dn-mktg { color: #c068a0; } .dn-data { color: #78a838; }
+
+  .dc-count { font-size: 11px; margin-top: 3px; color: #686660; }
+
+  .shared-pill { display: inline-block; font-size: 9px; font-weight: 600; padding: 1px 6px; border-radius: 10px; margin-top: 4px; }
+  .sp-amber { background: #382800; color: #c09840; }
+  .sp-coral { background: #301408; color: #c07058; }
+  .sp-green { background: #182800; color: #78a838; }
+
+  .chevron { display: block; margin-top: 5px; font-size: 10px; color: #585650; transition: transform .2s; }
+  .chevron.open { transform: rotate(180deg); }
+
+  .members { display: none; width: 100%; flex-direction: column; gap: 4px; margin-top: 7px; }
+  .members.open { display: flex; }
+
+  .mc {
+    background: #262622; border: 1px solid #38362e;
+    border-radius: 7px; padding: 8px 10px;
+  }
+  .mn { font-size: 12px; font-weight: 600; color: #d4d2cc; line-height: 1.3; }
+  .mr { font-size: 11px; color: #686660; margin-top: 2px; }
+
+  .sub { font-size: 9px; font-weight: 600; color: #504e48; text-transform: uppercase; letter-spacing: .07em; padding: 7px 2px 2px; }
+
+  .tl-badge { font-size: 9px; font-weight: 600; padding: 1px 5px; border-radius: 3px; margin-left: 3px; vertical-align: middle; background: #143020; color: #48a878; }
+  .pt-badge { font-size: 9px; font-weight: 500; padding: 1px 5px; border-radius: 3px; margin-left: 3px; vertical-align: middle; background: #2a2a26; color: #686660; border: 1px solid #38362e; }
+  .prod-badge { font-size: 9px; font-weight: 600; padding: 1px 6px; border-radius: 10px; display: inline-block; margin-top: 4px; background: #22203a; color: #9890d8; border: 1px solid #5850a0; }
+  .liaison-badge { font-size: 9px; font-weight: 600; padding: 1px 5px; border-radius: 3px; margin-left: 3px; vertical-align: middle; background: #162030; color: #5898c8; border: 1px solid #285888; }
+  .mostly-badge { font-size: 9px; font-weight: 500; padding: 1px 4px; border-radius: 3px; margin-left: 3px; vertical-align: middle; background: #2a2a26; color: #585650; border: 1px dashed #48463e; }
+
+  .squad-lead { background: #262622; border: 1.5px solid #38362e; border-radius: 7px; padding: 8px 10px; border-left-width: 3px; }
+  .sl-sales { border-left-color: #5850a0; }
+  .sl-agent { border-left-color: #285888; }
+  .sl-conn  { border-left-color: #806018; }
+
+  .squad-members { display: flex; flex-direction: column; gap: 3px; padding-left: 10px; border-left: 1.5px solid #38362e; margin-left: 5px; }
+  .smc { background: #262622; border: 1px solid #38362e; border-radius: 6px; padding: 5px 8px; }
+  .smn { font-size: 11px; font-weight: 600; color: #d4d2cc; }
+  .smr { font-size: 10px; color: #686660; margin-top: 1px; }
+
+  .liaison-card { background: #262622; border: 1px solid #285888; border-radius: 7px; padding: 8px 10px; }
+  .slack-row { font-size: 10px; color: #686660; background: #222220; border: 1px dashed #38362e; border-radius: 6px; padding: 6px 9px; line-height: 1.6; }
+  .shared-row { font-size: 10px; color: #686660; background: #222220; border: 1px solid #38362e; border-radius: 6px; padding: 5px 9px; margin-top: 3px; }
+
+  .pm-section { margin-top: 22px; padding-top: 18px; border-top: 1.5px dashed #38362e; display: flex; gap: 14px; align-items: flex-start; flex-wrap: wrap; }
+  .pm-card { border: 1.5px dashed #38362e; border-radius: 10px; padding: 12px 16px; min-width: 210px; flex-shrink: 0; }
+  .pm-label { font-size: 9px; font-weight: 600; color: #504e48; letter-spacing: .07em; text-transform: uppercase; margin-bottom: 4px; }
+  .pm-name { font-size: 14px; font-weight: 600; color: #d4d2cc; }
+  .pm-role { font-size: 12px; color: #686660; margin-top: 2px; }
+  .pm-badge { font-size: 10px; color: #585650; background: #222220; border: 1px solid #38362e; border-radius: 4px; padding: 2px 7px; margin-top: 7px; display: inline-block; }
+  .pm-note { flex: 1; min-width: 200px; font-size: 12px; color: #686660; line-height: 1.7; background: #222220; border: 1px solid #38362e; border-radius: 8px; padding: 10px 14px; align-self: center; }
+
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 20px; padding-top: 16px; border-top: 1px solid #38362e; }
+  .li { display: flex; align-items: center; gap: 5px; font-size: 10px; color: #686660; }
+  .ll { width: 20px; height: 2px; background: #38362e; }
+  .lld { background: repeating-linear-gradient(90deg, #38362e 0 4px, transparent 4px 8px); }
+  .coming-note { font-size: 9px; color: #504e48; padding: 4px 2px 0; font-style: italic; }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>Journey Mentor</h1>
+  <p>Organisation Structure — April 2026</p>
+</div>
+
+<div class="org">
+
+  <div class="cto-wrap">
+    <div class="cto-card">
+      <div class="cto-label">Chief Technology Officer</div>
+      <div class="cto-name">Sana Ebadi</div>
+      <div class="cto-role">Journey Mentor</div>
+    </div>
+    <div class="vline" style="height:18px"></div>
+    <div class="hline"></div>
+  </div>
+
+  <div class="dept-row">
+
+    <div class="dept-col">
+      <div class="vl-dept"></div>
+      <div class="dept-card dc-business" onclick="tog('business')">
+        <div class="dn dn-business">PO · BA</div>
+        <div class="dc-count">2 members</div>
+        <span class="chevron" id="ch-business">▼</span>
+      </div>
+      <div class="members" id="m-business">
+        <div class="mc">
+          <div class="mn">Farzaneh Saeedi</div>
+          <div class="mr">Product Owner · BA</div>
+          <div><span class="prod-badge">Agent Mentor</span></div>
+        </div>
+        <div class="mc">
+          <div class="mn">Mohammad Soliemani</div>
+          <div class="mr">Product Owner · BA</div>
+          <div><span class="prod-badge">Sales Mentor</span></div>
+        </div>
+        <div class="coming-note">+ More products coming</div>
+      </div>
+    </div>
+
+    <div class="dept-col">
+      <div class="vl-dept"></div>
+      <div class="dept-card dc-devops" onclick="tog('devops')">
+        <div class="dn dn-devops">DevOps</div>
+        <div><span class="shared-pill sp-amber">◎ Shared</span></div>
+        <div class="dc-count">4 members</div>
+        <span class="chevron" id="ch-devops">▼</span>
+      </div>
+      <div class="members" id="m-devops">
+        <div class="mc"><div class="mn">Hossein Fardpour</div><div class="mr">DevOps Manager</div></div>
+        <div class="mc"><div class="mn">Jalal Zivari</div><div class="mr">DevOps Engineer</div></div>
+        <div class="mc"><div class="mn">Farzad<span class="pt-badge">Part-time</span></div><div class="mr">DevOps Engineer</div></div>
+        <div class="mc"><div class="mn">Hossein Ghorbani<span class="pt-badge">Part-time</span></div><div class="mr">DevOps Engineer</div></div>
+      </div>
+    </div>
+
+    <div class="dept-col">
+      <div class="vl-dept"></div>
+      <div class="dept-card dc-database" onclick="tog('database')">
+        <div class="dn dn-database">Database</div>
+        <div><span class="shared-pill sp-coral">◎ Shared</span></div>
+        <div class="dc-count">3 members</div>
+        <span class="chevron" id="ch-database">▼</span>
+      </div>
+      <div class="members" id="m-database">
+        <div class="mc"><div class="mn">Hamid Naqibi</div><div class="mr">Database Manager</div></div>
+        <div class="mc"><div class="mn">Meysam<span class="pt-badge">Part-time</span></div><div class="mr">Database Specialist</div></div>
+        <div class="mc"><div class="mn">Milad<span class="pt-badge">Part-time</span></div><div class="mr">Database Specialist</div></div>
+      </div>
+    </div>
+
+    <div class="dept-col">
+      <div class="vl-dept"></div>
+      <div class="dept-card dc-data" onclick="tog('data')">
+        <div class="dn dn-data">Data</div>
+        <div><span class="shared-pill sp-green">◎ Shared</span></div>
+        <div class="dc-count">2 members</div>
+        <span class="chevron" id="ch-data">▼</span>
+      </div>
+      <div class="members" id="m-data">
+        <div class="mc"><div class="mn">Zara</div><div class="mr">Data Curator Manager</div></div>
+        <div class="mc"><div class="mn">Mahyar<span class="pt-badge">Part-time</span></div><div class="mr">Data Curator</div></div>
+      </div>
+    </div>
+
+    <div class="dept-col">
+      <div class="vl-dept"></div>
+      <div class="dept-card dc-impl" onclick="tog('impl')">
+        <div class="dn dn-impl">Implementn.</div>
+        <div class="dc-count">1 manager</div>
+        <span class="chevron" id="ch-impl">▼</span>
+      </div>
+      <div class="members" id="m-impl">
+        <div class="mc" style="border-left:3px solid #285888">
+          <div class="mn">Hassan Pudineh</div>
+          <div class="mr">Implementation Manager</div>
+        </div>
+        <div class="sub">Backend liaison</div>
+        <div class="liaison-card">
+          <div class="mn">Bardia Mostafavi<span class="liaison-badge">Liaison</span></div>
+          <div class="mr">Sales Mentor backend · incidents & urgent issues</div>
+        </div>
+        <div class="sub">Other teams</div>
+        <div class="slack-row">Frontend · Agent Mentor · Connectivity handle urgent issues via existing Slack workflows</div>
+        <div class="sub">Shared access</div>
+        <div class="shared-row">UI/UX · QA · DevOps · Data · Database</div>
+      </div>
+    </div>
+
+    <div class="dept-col">
+      <div class="vl-dept"></div>
+      <div class="dept-card dc-dev" onclick="tog('dev')">
+        <div class="dn dn-dev">Development</div>
+        <div class="dc-count">22 members</div>
+        <span class="chevron" id="ch-dev">▼</span>
+      </div>
+      <div class="members" id="m-dev">
+        <div class="sub">Frontend</div>
+        <div class="mc"><div class="mn">Amirhossein Salimi Shad<span class="tl-badge">Tech Lead</span></div></div>
+        <div class="mc"><div class="mn">Faezeh Ebrahimi</div><div class="mr">Frontend Developer</div></div>
+        <div class="mc"><div class="mn">Mohammad Talkhabi</div><div class="mr">Frontend Developer</div></div>
+        <div class="mc"><div class="mn">MohammadReza JahanTalab</div><div class="mr">Frontend Developer</div></div>
+        <div class="mc"><div class="mn">Morteza Sabihi</div><div class="mr">Frontend Developer</div></div>
+
+        <div class="sub">Backend · Sales Mentor</div>
+        <div class="squad-lead sl-sales">
+          <div class="mn">Naser Rafiei Nia<span class="tl-badge">Tech Lead</span></div>
+          <div class="mr">Sales Mentor</div>
+        </div>
+        <div class="squad-members">
+          <div class="smc"><div class="smn">Artur Zelek</div><div class="smr">Backend Developer</div></div>
+          <div class="smc"><div class="smn">Bardia Mostafavi<span class="liaison-badge">Impl. Liaison</span></div><div class="smr">Backend Developer</div></div>
+          <div class="smc"><div class="smn">Muhammad Awais</div><div class="smr">Backend Developer</div></div>
+          <div class="smc"><div class="smn">Reza Mansouri</div><div class="smr">Backend Developer</div></div>
+        </div>
+
+        <div class="sub">Backend · Agent Mentor</div>
+        <div class="squad-lead sl-agent">
+          <div class="mn">Mohammad Banazadeh<span class="tl-badge">Tech Lead</span></div>
+          <div class="mr">Agent Mentor</div>
+        </div>
+        <div class="squad-members">
+          <div class="smc"><div class="smn">Hamza Harb</div><div class="smr">Backend Developer</div></div>
+          <div class="smc"><div class="smn">Waqar Ali</div><div class="smr">Backend Developer</div></div>
+          <div class="smc"><div class="smn">Usama Malik</div><div class="smr">Backend Developer</div></div>
+        </div>
+
+        <div class="sub">Backend · Connectivity</div>
+        <div class="squad-lead sl-conn">
+          <div class="mn">Mohammad Sepehri<span class="tl-badge">Tech Lead</span></div>
+          <div class="mr">Connectivity</div>
+        </div>
+        <div class="squad-members">
+          <div class="smc"><div class="smn">Mahsa Saadat</div><div class="smr">Backend Developer</div></div>
+        </div>
+
+        <div class="sub">QA</div>
+        <div class="mc" style="border-left:3px solid #504e48">
+          <div class="mn">Mehdi Hashemi</div><div class="mr">QA Manager</div>
+        </div>
+        <div class="mc"><div class="mn">Elham Amoozadeh</div><div class="mr">QA · Connectivity</div></div>
+        <div class="mc"><div class="mn">Karim Boughannam</div><div class="mr">QA · Agent Mentor <span class="mostly-badge">mostly</span></div></div>
+        <div class="mc"><div class="mn">Niloufar Alahkaram</div><div class="mr">QA</div></div>
+
+        <div class="sub">UI/UX · Shared</div>
+        <div class="mc"><div class="mn">Sajjad Naseri Zadeh</div><div class="mr">UI/UX Manager</div></div>
+        <div class="mc" style="border-style:dashed"><div class="mn">Hana Akhundi</div><div class="mr">UI/UX Designer</div></div>
+      </div>
+    </div>
+
+    <div class="dept-col">
+      <div class="vl-dept"></div>
+      <div class="dept-card dc-mktg" onclick="tog('mktg')">
+        <div class="dn dn-mktg">Marketing</div>
+        <div class="dc-count">3 members</div>
+        <span class="chevron" id="ch-mktg">▼</span>
+      </div>
+      <div class="members" id="m-mktg">
+        <div class="mc"><div class="mn">Mahsa Ashouri</div><div class="mr">Marketing & Social Manager</div></div>
+        <div class="mc"><div class="mn">Michael Auquo</div><div class="mr">SEO Specialist</div></div>
+        <div class="mc"><div class="mn">Sina Babaei</div><div class="mr">Graphic Designer</div></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="pm-section">
+    <div class="pm-card">
+      <div class="pm-label">Reports to CTO</div>
+      <div class="pm-name">Hamid Jafari Maram</div>
+      <div class="pm-role">Project Manager</div>
+      <div class="pm-badge">↔ Coordinates with Development</div>
+    </div>
+    <div class="pm-note">
+      Reports directly to the CTO but operates at team level — manages ClickUp tasks, tracks delivery, and coordinates across the Development team. No management hierarchy over developers.
+    </div>
+  </div>
+
+  <div class="legend">
+    <div class="li"><div class="ll"></div>Reporting line</div>
+    <div class="li"><div class="ll lld"></div>Coordination / shared access</div>
+    <div class="li"><span class="shared-pill sp-amber">◎ Shared</span>Shared across teams</div>
+    <div class="li"><span class="pt-badge">Part-time</span>Part-time member</div>
+    <div class="li"><span class="prod-badge">Product</span>Product ownership</div>
+    <div class="li"><span class="liaison-badge">Liaison</span>Implementation contact</div>
+    <div class="li"><span class="mostly-badge">mostly</span>Primary but not exclusive</div>
+  </div>
+
+</div>
+
+<script>
+function tog(id) {
+  const m = document.getElementById('m-' + id);
+  const c = document.getElementById('ch-' + id);
+  const isOpen = m.classList.contains('open');
+  m.classList.toggle('open', !isOpen);
+  if (c) c.classList.toggle('open', !isOpen);
+}
+</script>
+</body>
+</html>
